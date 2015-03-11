@@ -1,0 +1,65 @@
+Adding uptime syscall. It has one parameter. An address of a unsigned long. It store in the unsigned long the time in seconds since the system started.
+
+Signed-off-by: magoo <mael.gouacide@lepitech.eu>
+---
+ arch/x86/syscalls/syscall_64.tbl |  1 +
+ kernel/Makefile                  |  2 +-
+ kernel/uptime.c                  | 22 ++++++++++++++++++++++
+ 3 files changed, 24 insertions(+), 1 deletion(-)
+ create mode 100644 kernel/uptime.c
+
+diff --git a/arch/x86/syscalls/syscall_64.tbl b/arch/x86/syscalls/syscall_64.tbl
+index 35dd922..2d1c015 100644
+--- a/arch/x86/syscalls/syscall_64.tbl
++++ b/arch/x86/syscalls/syscall_64.tbl
+@@ -327,6 +327,7 @@
+ 318    common  getrandom               sys_getrandom
+ 319    common  memfd_create            sys_memfd_create
+ 320    common  kexec_file_load         sys_kexec_file_load
++321    64      uptime                  sys_uptime
+
+ #
+ # x32-specific system call numbers start at 512 to avoid cache impact
+diff --git a/kernel/Makefile b/kernel/Makefile
+index dc5c775..e43fe8f 100644
+--- a/kernel/Makefile
++++ b/kernel/Makefile
+@@ -9,7 +9,7 @@ obj-y     = fork.o exec_domain.o panic.o \
+            extable.o params.o \
+            kthread.o sys_ni.o nsproxy.o \
+            notifier.o ksysfs.o cred.o reboot.o \
+-           async.o range.o groups.o smpboot.o
++           async.o range.o groups.o smpboot.o uptime.o
+
+ ifdef CONFIG_FUNCTION_TRACER
+ # Do not trace debug files and internal ftrace files
+diff --git a/kernel/uptime.c b/kernel/uptime.c
+new file mode 100644
+index 0000000..5244524
+--- /dev/null
++++ b/kernel/uptime.c
+@@ -0,0 +1,22 @@
++#include <linux/kernel.h>
++#include <linux/fs.h>
++#include <linux/init.h>
++#include <linux/proc_fs.h>
++#include <linux/sched.h>
++#include <linux/seq_file.h>
++#include <linux/time.h>
++#include <linux/kernel_stat.h>
++#include <linux/cputime.h>
++#include <linux/syscalls.h>
++
++
++
++
++SYSCALL_DEFINE1(uptime,
++               long __user *, val) {
++
++       struct timespec _uptime;
++
++       get_monotonic_boottime(&_uptime);
++       return copy_to_user(val, &(_uptime.tv_sec), sizeof(*val));
++}
+--
+1.9.3
